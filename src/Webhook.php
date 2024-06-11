@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/Log.php';
+
 class Webhook
 {
     private $url;
@@ -60,14 +62,23 @@ class Webhook
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $this->getUrl());
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
             'order_id' => $this->getOrderId(),
             'name' => $this->getName(),
             'event' => $this->getEvent(),
         ]));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
 
-        curl_exec($curl);
+        $response = curl_exec($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        
+        if ($response === false) {
+            $error = curl_error($curl);
+            Log::error("Curl error: " . $error);
+        }
 
         curl_close($curl);
 

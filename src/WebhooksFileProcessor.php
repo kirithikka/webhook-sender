@@ -19,24 +19,26 @@ class WebhooksFileProcessor
     {
         $webhooks = [];
 
-        try {
-            $webhooksFile = fopen($this->webhooksFile, 'r');
-            if (!$webhooksFile) {
-                throw new \Exception('Webhooks text file not found!');
-            }
-
-            $isFirstLine = false;
-            while (($line = fgetcsv($webhooksFile)) !== false) {
-                if (!$isFirstLine) {
-                    $isFirstLine = true;
-                    continue;
-                }
-
-                $webhooks[] = new Webhook($line[0], $line[1], $line[2], $line[3]);
-            }
-        } catch(\Exception $e) {
-            echo "Error in processing webhooks file";
+        if (!file_exists($this->webhooksFile)) {
+            throw new \Exception('Webhooks text file not found!');
         }
+
+        $webhooksFile = fopen($this->webhooksFile, 'r');
+        if (!$webhooksFile) {
+            throw new \Exception('Failed to open webhooks text file!');
+        }
+
+        $isFirstLine = false;
+        while (($line = fgetcsv($webhooksFile)) !== false) {
+            if (!$isFirstLine) {
+                $isFirstLine = true;
+                continue;
+            }
+
+            $webhooks[] = new Webhook($line[0], $line[1], $line[2], $line[3]);
+        }
+
+        fclose($webhooksFile);
 
         return $webhooks;
     }

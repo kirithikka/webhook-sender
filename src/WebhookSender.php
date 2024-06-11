@@ -1,10 +1,12 @@
 <?php
 
+require_once __DIR__ . '/Log.php';
+
 class WebhookSender
 {
     private $delay;
 
-    private $failedEndPointsCounts;
+    private $failedEndPointsCounts = [];
 
     const MAX_RETRY_DELAY = 60; // 1 minute
 
@@ -16,6 +18,7 @@ class WebhookSender
      */
     public function sendWebhooks(array $webhooks)
     {
+        Log::debug("Sending webhooks");
         foreach ($webhooks as $webhook) {
             $webhookUrl = $webhook->getUrl();
 
@@ -23,27 +26,30 @@ class WebhookSender
             if (isset($this->failedEndPointsCounts[$webhookUrl])
                 && $this->failedEndPointsCounts[$webhookUrl] >= self::FAILED_WEBHOOKS_THRESHOLD
             ) {
+                Log::debug("Stopped attempting to send webhook to " . $webhookUrl);
                 continue;
             }
 
-            $this->intialiseDelay();
+            $this->initialiseDelay();
 
             // if the webhook is not successfully sent, retry using an 
             // exponential backoff strategy
             while ($this->delay <= self::MAX_RETRY_DELAY) {
-                echo "\n" . $this->delay;
                 if ($webhook->sendToDestination()) {
+                    Log::debug("Webhook sent successfully to: " . $webhookUrl);
                     break;
                 }
 
+                Log::debug("Failed to send webhook to: " . $webhookUrl . " - Retrying in " . $this->delay . " seconds");
                 sleep($this->delay);
-                $this->delay = 2 * $this->delay;
+                $this->delay *= 2;
             }
 
             // after the maximum retry delay(1 min), 
             // add the webhook endpoint to failed end points and increment its count
             if ($this->delay > self::MAX_RETRY_DELAY) {
                 $this->incrementFailedEndPointsCounts($webhookUrl);
+                Log::debug("Max retries reached. Failed to send webhook to: " . $webhookUrl);
             }
         }
     }
@@ -52,7 +58,7 @@ class WebhookSender
      * Initialise the delay
      *
      */
-    private function intialiseDelay()
+    private function initialiseDelay()
     {
         $this->delay = 1;
     }
@@ -63,10 +69,10 @@ class WebhookSender
      */
     private function incrementFailedEndPointsCounts($url)
     {
-        if (isset($failedEndPointsCounts[$url])) {
+        if (isset($this->failedEndPointsCounts[$url])) {
             $this->failedEndPointsCounts[$url]++;
         } else {
-            $this->failedEndPointsCounts[$url] = 0;
+            $this->failedEndPointsCounts[$url] = 1;
         }
     }
 }
