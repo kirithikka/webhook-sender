@@ -5,8 +5,8 @@ Sending mechanism to send the webhooks to their destination
 
 1. **Clone the repository**:
    ```sh
-   git clone <repository-url>
-   cd <repository-folder>
+   git clone https://github.com/kirithikka/webhook-sender
+   cd webhook-sender
     ```
 
 2. Ensure PHP is installed
@@ -17,7 +17,7 @@ Sending mechanism to send the webhooks to their destination
 
 5. Added tests only for one function Webhook in tests/ folder. Run the tests using the command
     ```sh
-        php tests/WebhookTest.php
+    php tests/WebhookTest.php
     ```
 
 ## Design decisions:
